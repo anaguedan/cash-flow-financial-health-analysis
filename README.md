@@ -1,37 +1,52 @@
 # Cash Flow & Financial Health Analysis
 
-Portfolio case study focused on cash flow, working capital and financial health analysis using simulated data.
+🇪🇸 **Español** | [🇬🇧 English](README_EN.md)
 
-## Project Overview
+Caso práctico de portfolio centrado en el análisis de **Cash Flow, capital circulante y salud financiera**, desarrollado íntegramente con **datos simulados**.
 
-This project analyses the financial position and cash generation of a simulated company using information derived from the Balance Sheet and Income Statement.
+## Descripción del proyecto
 
-The objective is to transform financial statement data into actionable insights for financial analysis, controlling and decision-making.
+Este proyecto analiza la situación financiera y la capacidad de generación de caja de una empresa simulada a partir de información procedente del **Balance** y la **Cuenta de Resultados (PyG)**.
 
-## Key Areas
+El objetivo es transformar información financiera en indicadores, análisis e insights que faciliten la comprensión de la evolución del negocio y apoyen la toma de decisiones en áreas como **Finance Analytics, FP&A y Controlling**.
 
-- Cash Flow Analysis
-- Working Capital
-- Free Cash Flow
-- Operating Cash Generation
-- Financial Health
-- KPI Analysis
-- Balance Sheet & Income Statement Analysis
+## Áreas de análisis
 
-## Tools
+* Cash Flow
+* Capital circulante
+* Free Cash Flow
+* Generación de caja operativa
+* Salud financiera
+* Análisis de KPIs
+* Balance y Cuenta de Resultados
+* Evolución y variaciones financieras
 
-- Excel
-- Financial Analysis
-- Data Analysis
-- HTML / GitHub Pages
-- Power BI *(planned)*
+## Herramientas
 
-## Project Status
+* Excel
+* Análisis financiero
+* Análisis de datos
+* HTML / GitHub Pages
+* Power BI *(previsto)*
 
-🚧 **In development**
+## Estado del proyecto
 
-The complete interactive case study, downloadable dataset and technical documentation will be added progressively.
+🚧 **En desarrollo**
 
-## Data Disclaimer
+La versión completa incluirá progresivamente:
 
-All data used in this project is simulated and created exclusively for educational and portfolio purposes.
+* Case study interactivo
+* Dataset descargable
+* Diccionario de datos
+* Definición y cálculo de KPIs
+* Metodología
+* Principales insights y conclusiones
+* Documentación técnica
+* Dashboard en Power BI
+
+## Aviso sobre los datos
+
+Todos los datos utilizados en este proyecto son **simulados** y han sido creados exclusivamente con fines educativos y de portfolio.
+
+No se utiliza información confidencial, personal ni procedente de empresas reales.
+
