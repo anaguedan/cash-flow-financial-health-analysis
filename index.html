@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Caso de portfolio con datos simulados: generación de caja, liquidez y salud financiera reconstruidas desde cuenta de resultados, balance y movimientos auxiliares.">
+  <meta name="author" content="Ana Guedán Carbonell">
+  <title>Generación de caja y salud financiera · Ana Guedán Carbonell</title>
+  <style>
+    :root {
+      --ink:#10242a; --muted:#53676d; --teal:#006c70; --teal-2:#289ba0;
+      --aqua:#dfeff0; --cream:#f5efe4; --paper:#fffdf8; --sand:#eadfcb;
+      --line:#c8d3d1; --navy:#183f4a; --amber:#d79a4b; --rose:#b94f5c;
+      --ok:#287550; --shadow:0 18px 55px rgba(16,36,42,.08); --radius:28px;
+      --max:1280px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;scroll-padding-top:96px}
+    body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.6 Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow-x:hidden}
+    a{color:inherit} button,a{touch-action:manipulation}
+    button{font:inherit}
+    :focus-visible{outline:3px solid var(--amber);outline-offset:4px}
+    .skip{position:absolute;left:-999px;top:12px;z-index:100;background:var(--paper);padding:10px 14px;border-radius:12px}
+    .skip:focus{left:12px}
+    .site-header{position:sticky;top:0;z-index:50;background:rgba(245,239,228,.94);backdrop-filter:blur(16px);border-bottom:1px solid rgba(16,36,42,.14)}
+    .nav{max-width:var(--max);margin:auto;min-height:76px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .brand{text-decoration:none;font-weight:800;letter-spacing:-.02em;white-space:nowrap}.brand span{color:var(--teal)}
+    .nav-links{display:flex;align-items:center;gap:22px;font-size:.92rem}.nav-links a{text-decoration:none;color:var(--muted)}.nav-links a:hover{color:var(--teal)}.nav-links a.button{color:white}
+    .button,.menu-button{border:0;border-radius:14px;background:var(--teal);color:white;text-decoration:none;font-weight:750;padding:12px 18px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+    .button.secondary{background:transparent;color:var(--teal);border:1px solid var(--teal)}
+    .button.light{background:var(--paper);color:var(--teal)}
+    .menu-button{display:none;padding:10px 12px}
+    .hero{min-height:690px;display:grid;align-items:center;background:radial-gradient(circle at 88% 18%,#f1ceb8 0 12%,transparent 32%),radial-gradient(circle at 5% 95%,#cfe5e5 0 9%,transparent 28%),var(--cream)}
+    .hero-grid,.section-inner{width:min(var(--max),calc(100% - 56px));margin:auto}
+    .hero-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:70px;align-items:center;padding:84px 0}
+    .eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:.75rem;line-height:1.2;font-weight:850;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
+    .eyebrow::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--teal-2)}
+    h1,h2,h3,p{margin-top:0} h1{font-size:clamp(3.2rem,7vw,6.7rem);line-height:.92;letter-spacing:-.065em;margin:24px 0 28px;max-width:900px}
+    h2{font-size:clamp(2.3rem,5vw,4.8rem);line-height:1;letter-spacing:-.055em;margin-bottom:26px}
+    h3{font-size:1.35rem;line-height:1.25;letter-spacing:-.025em}
+    .lead{font-size:clamp(1.1rem,2vw,1.42rem);max-width:770px;line-height:1.5}.muted{color:var(--muted)}
+    .hero-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:34px}
+    .hero-card{background:var(--paper);border:1px solid rgba(16,36,42,.13);border-radius:36px;padding:34px;box-shadow:var(--shadow);transform:rotate(1deg)}
+    .hero-card .number{font:700 clamp(4.2rem,8vw,7.2rem)/1 Georgia,serif;color:var(--teal);letter-spacing:-.06em}.hero-card .unit{font-weight:800;color:var(--teal)}
+    .hero-card dl{display:grid;grid-template-columns:1fr auto;gap:12px 18px;margin:28px 0 0;border-top:1px solid var(--line);padding-top:22px}.hero-card dt{color:var(--muted)}.hero-card dd{margin:0;font-weight:800}
+    .trust-strip{background:var(--ink);color:white}.trust-grid{width:min(var(--max),calc(100% - 56px));margin:auto;padding:22px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+    .trust-grid strong{display:block;font-size:1.1rem}.trust-grid span{font-size:.82rem;color:#c5d4d5}
+    section{padding:110px 0}.section-kicker{color:var(--teal);font-size:.76rem;font-weight:850;letter-spacing:.17em;text-transform:uppercase;margin-bottom:20px}
+    .section-head{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:end;margin-bottom:52px}.section-head p{font-size:1.12rem;color:var(--muted);max-width:650px;margin-left:auto}
+    .summary{background:var(--aqua)}
+    .summary-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
+    .card{background:rgba(255,253,248,.88);border:1px solid rgba(16,36,42,.13);border-radius:var(--radius);padding:30px;box-shadow:0 12px 30px rgba(16,36,42,.04)}
+    .card .index{font:500 2.6rem/1 Georgia,serif;color:var(--teal)}
+    .card ul{padding-left:20px;margin-bottom:0}.card li+li{margin-top:9px}
+    .summary-wide{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:36px;background:var(--ink);color:white}.summary-wide p{color:#c8d6d8}.tech-list{display:flex;flex-wrap:wrap;gap:10px}.pill{border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:7px 11px;font-size:.82rem}
+    .dashboard{background:var(--paper)}
+    .toolbar{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:28px;padding:16px 18px;border:1px solid var(--line);border-radius:18px;background:#f7faf7}
+    .tabs{display:flex;gap:8px;flex-wrap:wrap}.tab{border:1px solid var(--line);background:transparent;color:var(--ink);padding:10px 14px;border-radius:999px;cursor:pointer}.tab[aria-selected="true"]{background:var(--teal);color:white;border-color:var(--teal)}
+    .audit-toggle{border:0;background:var(--ink);color:white;border-radius:999px;padding:11px 15px;font-weight:800;cursor:pointer;white-space:nowrap}
+    .dashboard-view[hidden]{display:none}
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0 26px}
+    .kpi{appearance:none;text-align:left;background:var(--cream);border:1px solid var(--line);border-radius:20px;padding:20px;cursor:pointer;min-height:152px;transition:transform .2s,box-shadow .2s}.kpi:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+    .kpi small{display:block;color:var(--muted);font-weight:700}.kpi strong{display:block;font-size:clamp(1.65rem,3vw,2.45rem);letter-spacing:-.05em;margin:10px 0 5px}.kpi em{font-style:normal;font-size:.79rem;color:var(--teal);font-weight:800}
+    .chart-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:18px}.chart-card{border:1px solid var(--line);border-radius:24px;padding:24px;background:white;min-width:0}.chart-card.full{grid-column:1/-1}.chart-title{display:flex;justify-content:space-between;gap:20px;align-items:start;margin-bottom:14px}.chart-title p{font-size:.9rem;color:var(--muted);max-width:520px}
+    .chart{height:330px;min-width:0}.chart svg{display:block;width:100%;height:100%}.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--muted)}.legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px;background:var(--legend)}
+    .data-disclosure{margin-top:14px}.data-disclosure summary{cursor:pointer;font-weight:750;color:var(--teal)}
+    .table-wrap{overflow-x:auto;margin-top:12px;border:1px solid var(--line);border-radius:16px;background:white}
+    table{border-collapse:collapse;width:100%;font-size:.86rem}th,td{padding:11px 13px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}th{background:#eef5f3;color:var(--ink)}
+    .insight-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px}.insight{border-left:4px solid var(--teal-2);background:var(--cream);padding:20px;border-radius:0 16px 16px 0}.insight.alert{border-color:var(--amber)}
+    .method{background:var(--cream)}
+    .method-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:40px 0}.flow-step{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:22px}.flow-step:not(:last-child)::after{content:"→";position:absolute;right:-17px;top:50%;transform:translateY(-50%);z-index:2;color:var(--teal);font-weight:900}.flow-step b{display:block;color:var(--teal);margin-bottom:8px}
+    .formula-box{background:var(--ink);color:white;border-radius:28px;padding:30px;margin:24px 0}.formula{font:600 clamp(1.05rem,2vw,1.45rem)/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}.formula-box p{color:#cfddde}
+    .plain-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.explain{background:var(--paper);border:1px solid var(--line);border-radius:24px;padding:26px}
+    .model{background:var(--aqua)}
+    .model-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}.entity{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:24px}.entity.fact{border:2px solid var(--teal)}.entity code{display:block;color:var(--teal);font-weight:850;font-size:1rem;margin-bottom:10px}.entity ul{margin:0;padding-left:20px;color:var(--muted)}
+    .relations{margin-top:24px;background:var(--paper);border-radius:24px;padding:26px;border:1px solid var(--line)}.relation{display:grid;grid-template-columns:1fr 72px 1fr;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}.relation:last-child{border:0}.cardinality{text-align:center;color:var(--teal);font-weight:900}
+    .method,.model,.policies{display:none}
+    .policies{background:var(--paper)}
+    .policy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.policy{background:var(--cream);border:1px solid var(--line);border-radius:20px;padding:22px}.policy strong{color:var(--teal)}
+    .build{background:var(--aqua)}
+    .build-intro{display:grid;grid-template-columns:1.15fr .85fr;gap:20px;margin-bottom:30px}
+    .build-callout{background:var(--ink);color:white;border-radius:28px;padding:30px}.build-callout p{color:#d2dfe0}.build-callout strong{color:#79d6d8}
+    .build-status{display:grid;grid-template-columns:1fr 1fr;gap:12px}.build-status div{background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:20px}.build-status b{display:block;color:var(--teal);font-size:.76rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+    .build-chain{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:28px 0 54px}.chain-step{position:relative;background:rgba(255,253,248,.9);border:1px solid var(--line);border-radius:18px;padding:18px 14px;min-height:118px}.chain-step:not(:last-child)::after{content:"→";position:absolute;right:-15px;top:50%;z-index:2;color:var(--teal);font-weight:900}.chain-step span{display:block;color:var(--teal);font:600 1.25rem Georgia,serif;margin-bottom:7px}.chain-step b{display:block;font-size:.86rem;line-height:1.35}.chain-step small{color:var(--muted)}
+    .build-layout{display:grid;grid-template-columns:235px minmax(0,1fr);gap:28px;align-items:start}.build-nav{position:sticky;top:98px;background:rgba(255,253,248,.92);border:1px solid var(--line);border-radius:22px;padding:13px;box-shadow:0 14px 35px rgba(16,36,42,.05)}.build-nav a{display:block;text-decoration:none;color:var(--muted);font-size:.8rem;line-height:1.35;padding:9px 10px;border-radius:10px}.build-nav a:hover,.build-nav a:focus-visible{background:var(--aqua);color:var(--teal)}
+    .build-content{min-width:0}.build-chapter{scroll-margin-top:98px;background:rgba(255,253,248,.9);border:1px solid var(--line);border-radius:28px;padding:34px;margin-bottom:20px}.chapter-label{color:var(--teal);font-size:.72rem;font-weight:900;letter-spacing:.17em;text-transform:uppercase}.build-chapter h3{font-size:clamp(1.65rem,3vw,2.35rem);margin:7px 0 12px}.chapter-lead{color:var(--muted);font-size:1.02rem;max-width:820px}
+    .layer-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:22px}.layer{border:1px solid var(--line);border-radius:18px;padding:20px;background:#fff}.layer b{display:block;color:var(--teal);font-size:.76rem;letter-spacing:.09em;text-transform:uppercase;margin-bottom:7px}.layer.real{background:#f9f2e6;border-color:#dfc8a4}.layer.real b{color:#875f28}
+    .scope-grid,.source-grid,.state-grid,.dashboard-plan{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}.micro-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:19px}.micro-card b{display:block;color:var(--teal);margin-bottom:6px}.micro-card p:last-child{margin-bottom:0}.micro-card ul{padding-left:18px;margin-bottom:0}.micro-card li+li{margin-top:5px}
+    .build details{border:1px solid var(--line);border-radius:18px;background:#fff;margin-top:12px;overflow:hidden}.build details>summary{cursor:pointer;list-style:none;padding:17px 20px;font-weight:850;display:flex;justify-content:space-between;gap:18px}.build details>summary::-webkit-details-marker{display:none}.build details>summary::after{content:"+";color:var(--teal);font-size:1.25rem}.build details[open]>summary::after{content:"−"}.disclosure-body{padding:0 20px 20px}.disclosure-body>p:first-child{margin-top:0}
+    .process-list{counter-reset:process;margin:22px 0 0;padding:0;list-style:none;display:grid;gap:10px}.process-list li{counter-increment:process;display:grid;grid-template-columns:40px 1fr;gap:13px;align-items:start;background:#fff;border:1px solid var(--line);border-radius:17px;padding:16px}.process-list li::before{content:counter(process);width:34px;height:34px;border-radius:50%;background:var(--teal);color:white;display:grid;place-items:center;font-weight:900}.process-list b{display:block;margin-bottom:3px}
+    .source-table td:nth-child(2),.source-table td:nth-child(3),.source-table td:nth-child(4),.source-table th:nth-child(2),.source-table th:nth-child(3),.source-table th:nth-child(4){text-align:left;white-space:normal;min-width:165px}.source-table code{font-size:.78rem;color:var(--teal);font-weight:800}
+    .model-map{margin-top:22px;background:var(--ink);color:white;border-radius:24px;padding:24px;overflow-x:auto}.model-diagram{min-width:720px;display:grid;grid-template-columns:1fr 100px 1.5fr;gap:14px;align-items:center}.dim-stack,.fact-stack{display:grid;gap:10px}.diagram-node{border:1px solid rgba(255,255,255,.28);border-radius:16px;padding:14px;background:#17343b}.diagram-node b{display:block;color:#79d6d8}.diagram-arrow{text-align:center;font-weight:900;color:#79d6d8}.diagram-note{color:#c7d7d8;font-size:.82rem;margin:18px 0 0}
+    .sign-table .plus{color:var(--ok);font-weight:850}.sign-table .minus{color:var(--rose);font-weight:850}
+    .math-box{background:#d7ebeb;border:1px solid #acd1d1;border-radius:18px;padding:19px;margin-top:16px}.math-box code{display:block;font:650 .92rem/1.75 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:normal}.math-box strong{color:var(--teal)}
+    .numbered-bridge{display:grid;gap:9px;margin-top:22px}.bridge-row{display:grid;grid-template-columns:42px minmax(0,1fr) auto;gap:14px;align-items:center;border:1px solid var(--line);border-radius:17px;background:#fff;padding:15px}.bridge-row .n{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--teal);color:white;font-weight:900}.bridge-row b{display:block}.bridge-row small{color:var(--muted)}.bridge-row .amount{font-weight:900;color:var(--teal);white-space:nowrap}.bridge-row.total{background:var(--ink);color:white}.bridge-row.total .amount{color:#79d6d8}.bridge-row.total small{color:#cbd8da}
+    .kpi-path{display:grid;grid-template-columns:repeat(7,1fr);gap:7px;margin-top:20px}.kpi-path div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 10px;text-align:center;font-size:.78rem;font-weight:800;position:relative}.kpi-path div:not(:last-child)::after{content:"→";position:absolute;right:-13px;color:var(--teal)}
+    .code-block{background:#10242a;color:#e8f2f2;border-radius:16px;padding:18px;overflow:auto;font:600 .78rem/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap}.code-note{font-size:.84rem;color:var(--muted)}
+    .powerbi-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:20px}.powerbi-flow div{background:#fff;border:1px solid var(--line);border-radius:15px;padding:15px;text-align:center}.powerbi-flow b{display:block;color:var(--teal);font-size:.76rem;text-transform:uppercase;margin-bottom:4px}
+    .compare-table td,.compare-table th{text-align:left;white-space:normal}.compare-table td:first-child{font-weight:800;color:var(--teal)}
+    .chapter-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.chapter-links a{font-size:.8rem;text-decoration:none;border:1px solid var(--teal);color:var(--teal);border-radius:999px;padding:7px 11px;font-weight:800}
+    .caution{border-left:4px solid var(--amber);background:#f8ead0;border-radius:0 16px 16px 0;padding:17px 19px;margin-top:18px}.caution strong{color:#76511e}
+    .proof{border-left:4px solid var(--teal);background:#edf7f5;border-radius:0 16px 16px 0;padding:17px 19px;margin-top:18px}.proof strong{color:var(--teal)}
+    .audit{background:var(--ink);color:white}.audit .section-kicker{color:#6fd1d3}.audit .section-head p{color:#cad7d8}.audit-only{display:none}.audit-on .audit-only{display:block}
+    .status{display:inline-flex;align-items:center;gap:10px;background:#e6f1ea;color:var(--ok);border-radius:999px;padding:10px 15px;font-weight:850}.status::before{content:"✓";width:22px;height:22px;display:grid;place-items:center;border-radius:50%;background:var(--ok);color:white}
+    .quality-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:28px 0}.quality{border:1px solid rgba(255,255,255,.22);border-radius:18px;padding:18px}.quality strong{font-size:1.8rem;display:block}.quality span{color:#cbd8da}
+    .audit-steps{counter-reset:audit;display:grid;grid-template-columns:1fr 1fr;gap:12px}.audit-step{counter-increment:audit;background:#17343b;border-radius:18px;padding:20px}.audit-step::before{content:counter(audit,decimal-leading-zero);font:600 1.7rem Georgia,serif;color:#72d4d6;display:block}
+    .kpi-dictionary{margin-top:48px}.kpi-detail{background:white;color:var(--ink);border-radius:18px;margin:10px 0;overflow:hidden}.kpi-detail summary{cursor:pointer;padding:18px 22px;font-weight:850;display:flex;justify-content:space-between;gap:20px}.kpi-detail summary::after{content:"+";color:var(--teal)}.kpi-detail[open] summary::after{content:"−"}.detail-body{padding:0 22px 22px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.detail-body div{background:var(--cream);border-radius:14px;padding:15px}.detail-body b{display:block;color:var(--teal);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+    .audit-note{border:1px solid rgba(255,255,255,.24);border-radius:22px;padding:22px;margin-top:24px;color:#d3dede}
+    .about{background:var(--sand)}.about-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px}.meta-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}.meta{background:var(--paper);border-radius:16px;padding:17px}.meta b{display:block;color:var(--teal);font-size:.8rem;text-transform:uppercase;letter-spacing:.08em}
+    footer{background:var(--teal);color:white;padding:32px 0}.footer-grid{width:min(var(--max),calc(100% - 56px));margin:auto;display:flex;justify-content:space-between;gap:20px;align-items:center}.footer-grid p{margin:0;color:#d2e5e5}
+    @media(max-width:1100px){.nav-links{gap:14px}.nav-links a{font-size:.84rem}.build-chain{grid-template-columns:repeat(4,1fr)}.chain-step::after{display:none}.build-layout{grid-template-columns:1fr}.build-nav{position:static;display:flex;overflow-x:auto;gap:4px}.build-nav a{white-space:nowrap}.scope-grid,.source-grid,.state-grid,.dashboard-plan{grid-template-columns:1fr 1fr}.kpi-path{grid-template-columns:repeat(4,1fr)}.kpi-path div::after{display:none}.powerbi-flow{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:1024px){.hero-grid{grid-template-columns:1fr;gap:30px}.hero-card{max-width:700px;transform:none}.section-head{grid-template-columns:1fr;gap:12px}.section-head p{margin-left:0}.summary-grid,.policy-grid{grid-template-columns:1fr 1fr}.kpi-grid{grid-template-columns:repeat(2,1fr)}.chart-grid{grid-template-columns:1fr}.method-flow{grid-template-columns:1fr 1fr}.flow-step::after{display:none}.detail-body{grid-template-columns:1fr 1fr}.trust-grid{grid-template-columns:1fr 1fr}.build-intro{grid-template-columns:1fr}}
+    @media(max-width:880px){.nav{padding:0 18px}.menu-button{display:inline-flex}.nav-links{position:absolute;top:76px;left:0;right:0;display:none;flex-direction:column;align-items:stretch;background:var(--paper);padding:20px;border-bottom:1px solid var(--line)}.nav-links.open{display:flex}.nav-links .button{width:100%}.hero-grid,.section-inner{width:min(100% - 32px,var(--max))}.hero{min-height:auto}.hero-grid{padding:64px 0}section{padding:78px 0}.trust-grid{width:calc(100% - 32px)}.summary-grid,.plain-grid,.model-grid,.policy-grid,.about-grid{grid-template-columns:1fr}.summary-wide{grid-template-columns:1fr}.insight-grid,.quality-grid{grid-template-columns:1fr}.toolbar{align-items:flex-start;flex-direction:column}.audit-steps{grid-template-columns:1fr}.meta-list{grid-template-columns:1fr}.footer-grid{width:calc(100% - 32px);align-items:flex-start;flex-direction:column}.relation{grid-template-columns:1fr}.cardinality{text-align:left}.method-flow{grid-template-columns:1fr}.chart{height:290px}.layer-grid,.scope-grid,.source-grid,.state-grid,.dashboard-plan{grid-template-columns:1fr}.build-chain{grid-template-columns:1fr 1fr}.powerbi-flow{grid-template-columns:1fr 1fr}.build-chapter{padding:26px}.bridge-row{grid-template-columns:38px 1fr}.bridge-row .amount{grid-column:2}.kpi-path{grid-template-columns:1fr 1fr}}
+    @media(max-width:480px){h1{font-size:3.25rem}.kpi-grid{grid-template-columns:1fr}.trust-grid{grid-template-columns:1fr}.hero-actions .button{width:100%}.detail-body{grid-template-columns:1fr}.card,.chart-card{padding:20px}.hero-card{padding:24px}.tabs{flex-direction:column;width:100%}.tab{width:100%}.audit-toggle{width:100%}.chart{height:255px}.build-chain,.powerbi-flow,.kpi-path{grid-template-columns:1fr}.build-chapter{padding:21px}.build-nav{margin:0 -4px}.source-table{margin-left:-3px;margin-right:-3px}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
+  </style>
+</head>
+<body>
+  <a class="skip" href="#contenido">Saltar al contenido</a>
+  <header class="site-header">
+    <nav class="nav" aria-label="Navegación principal">
+      <a class="brand" href="#inicio">Ana Guedán <span>Carbonell</span></a>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="nav-links">Menú</button>
+      <div class="nav-links" id="nav-links">
+        <a href="#resumen">Resumen</a><a href="#dashboard">Dashboard</a><a href="#construccion">Cómo se construye</a><a href="#auditoria">Auditoría</a>
+        <a class="button" href="data/cash-flow-financial-health-analysis.xlsx" download>Descargar dataset</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="contenido">
+    <section class="hero" id="inicio">
+      <div class="hero-grid">
+        <div>
+          <span class="eyebrow">Finance Analytics · Datos simulados</span>
+          <h1>Generación de caja y salud financiera</h1>
+          <p class="lead">Reconstrucción del cash flow por método indirecto a partir de la cuenta de resultados, el balance y movimientos auxiliares, con una ruta de auditoría que permite reproducir cada conclusión.</p>
+          <p class="muted">Empresa ficticia: Nova Industrial Group · 36 cierres mensuales · enero de 2024 a diciembre de 2026 · EUR.</p>
+          <div class="hero-actions"><a class="button" href="#resumen">Entender el caso en 3 minutos</a><a class="button secondary" href="#construccion">Ver cómo se construye</a><button class="button secondary audit-jump" type="button">Abrir modo auditoría</button></div>
+        </div>
+        <aside class="hero-card" aria-label="Resultado principal del caso">
+          <span class="eyebrow">Caja operativa 2026</span>
+          <div class="number">6,17</div><div class="unit">millones de euros</div>
+          <dl><dt>Conversión CFO / EBITDA</dt><dd>80,8 %</dd><dt>FCF simplificado</dt><dd>4,03 M€</dd><dt>Caja tras inversión total</dt><dd>3,73 M€</dd><dt>Efectivo final</dt><dd>8,05 M€</dd></dl>
+        </aside>
+      </div>
+    </section>
+
+    <div class="trust-strip"><div class="trust-grid"><div><strong>37 periodos</strong><span>1 apertura + 36 cierres</span></div><div><strong>1.601 registros</strong><span>tres tablas fuente</span></div><div><strong>26 controles</strong><span>calidad y conciliación</span></div><div><strong>MODEL STATUS: PASS</strong><span>validación interna automatizada</span></div></div></div>
+
+    <section class="summary" id="resumen">
+      <div class="section-inner">
+        <div class="section-head"><div><div class="section-kicker">Resumen en 3 minutos</div><h2>De los estados financieros a una decisión</h2></div><p>Esta primera lectura responde qué problema se analizó, qué se construyó, qué indican los resultados y qué decisiones serían razonables sin atribuir a los datos más precisión de la que tienen.</p></div>
+        <div class="summary-grid">
+          <article class="card"><div class="index">01</div><h3>Pregunta de negocio</h3><p>¿El beneficio se transforma en caja suficiente para operar, invertir y atender obligaciones sin debilitar la liquidez?</p></article>
+          <article class="card"><div class="index">02</div><h3>Qué construí</h3><p>Un modelo mensual con P&amp;L, balance, cash flow indirecto, KPIs de circulante, solvencia y rentabilidad, más controles y trazabilidad campo a campo.</p></article>
+          <article class="card"><div class="index">03</div><h3>Resultado principal</h3><p>En 2026 la operación genera 6,17 M€ y convierte el 80,8 % del EBITDA en caja. Después de inversión material e intangible conserva 3,73 M€.</p></article>
+          <article class="card"><div class="index">04</div><h3>Tres hallazgos</h3><ul><li>La caja operativa supera al resultado neto: 1,73 veces.</li><li>El ciclo de caja baja a 52,6 días al cierre de 2026.</li><li>Septiembre concentra tensión por CFO negativo e inversión elevada.</li></ul></article>
+          <article class="card"><div class="index">05</div><h3>Decisiones que apoyaría</h3><ul><li>Fijar objetivos de cobro, inventario y pago.</li><li>Escalonar inversión cuando CFO y CAPEX coincidan en meses débiles.</li><li>Definir un colchón mínimo de caja antes de amortizar deuda.</li></ul></article>
+          <article class="card"><div class="index">06</div><h3>Límites</h3><p>Los datos son simulados y consolidados. Por ello, las recomendaciones se ajustan al alcance definido del proyecto.</p></article>
+          <article class="card summary-wide"><div><div class="section-kicker" style="color:#73d1d3">Tecnologías y alcance</div><h3>Qué existe hoy</h3><p>Excel contiene el dataset, fórmulas, estados financieros, modelo de cash flow, KPIs, controles y trazabilidad. Este HTML utiliza CSS y JavaScript nativos para presentar el caso de forma interactiva y responsive.</p></div><div><h3>Evolución en desarrollo</h3><p>Como evolución de esta versión, se está desarrollando una reconstrucción equivalente en Power BI para su próxima incorporación al portfolio.</p><div class="tech-list"><span class="pill">Excel</span><span class="pill">Modelado financiero</span><span class="pill">HTML</span><span class="pill">CSS</span><span class="pill">JavaScript</span><span class="pill">Control de calidad</span></div></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="dashboard" id="dashboard">
+      <div class="section-inner">
+        <div class="section-head"><div><div class="section-kicker">Dashboard explicativo</div><h2>La cifra, su causa y su uso</h2></div><p>Cada KPI es un botón. Al seleccionarlo se abre su ficha en el modo auditoría con definición, fórmula, fuente exacta y límites de interpretación.</p></div>
+        <div class="toolbar"><div class="tabs" role="tablist" aria-label="Vistas del dashboard"><button class="tab" role="tab" aria-selected="true" data-view="cash">01 · Caja</button><button class="tab" role="tab" aria-selected="false" data-view="working">02 · Circulante</button><button class="tab" role="tab" aria-selected="false" data-view="health">03 · Salud financiera</button></div><button class="audit-toggle" type="button" aria-pressed="false">Activar modo auditoría</button></div>
+
+        <div class="dashboard-view" data-panel="cash">
+          <div class="kpi-grid">
+            <button class="kpi" data-kpi="cfo"><small>Cash flow operativo · 2026</small><strong>6,17 M€</strong><em>Ver cálculo y fuentes →</em></button>
+            <button class="kpi" data-kpi="fcf"><small>FCF simplificado · 2026</small><strong>4,03 M€</strong><em>Después de CAPEX material →</em></button>
+            <button class="kpi" data-kpi="cash-invest"><small>Caja tras inversión total · 2026</small><strong>3,73 M€</strong><em>Incluye intangibles →</em></button>
+            <button class="kpi" data-kpi="ending-cash"><small>Efectivo final · dic. 2026</small><strong>8,05 M€</strong><em>Saldo, no flujo →</em></button>
+          </div>
+          <div class="chart-grid">
+            <article class="chart-card full"><div class="chart-title"><div><h3>Generación mensual y saldo de efectivo · 2026</h3><p>Las barras muestran flujos del mes; la línea muestra el saldo acumulado al cierre. Separarlos evita confundir cuánto se genera con cuánto queda disponible.</p></div><div class="legend"><span style="--legend:#006c70">CFO</span><span style="--legend:#183f4a">FCF simplificado</span><span style="--legend:#d79a4b">Efectivo final</span></div></div><div class="chart" id="cash-chart" role="img" aria-label="Gráfico mensual de cash flow operativo, FCF simplificado y efectivo final de 2026"></div>
+              <details class="data-disclosure"><summary>Ver los datos del gráfico</summary><div class="table-wrap"><table><thead><tr><th>Mes</th><th>CFO</th><th>FCF simplificado</th><th>Efectivo final</th></tr></thead><tbody id="cash-table"></tbody></table></div></details>
+            </article>
+          </div>
+          <div class="insight-grid"><div class="insight"><h3>Conversión sólida</h3><p>El CFO equivale al 80,8 % del EBITDA y a 1,73 veces el resultado neto.</p></div><div class="insight alert"><h3>Mes que exige explicación</h3><p>Septiembre: CFO −0,39 M€, CAPEX material 0,64 M€ y FCF simplificado −1,03 M€.</p></div><div class="insight"><h3>Lectura correcta</h3><p>El FCF simplificado no es el efectivo final: financiación, dividendos y otros movimientos explican la conciliación completa.</p></div></div>
+        </div>
+
+        <div class="dashboard-view" data-panel="working" hidden>
+          <div class="kpi-grid">
+            <button class="kpi" data-kpi="dso"><small>DSO · cobro</small><strong>53,3 días</strong><em>Clientes / ingresos →</em></button>
+            <button class="kpi" data-kpi="dio"><small>DIO · inventario</small><strong>50,5 días</strong><em>Inventario / coste →</em></button>
+            <button class="kpi" data-kpi="dpo"><small>DPO · pago</small><strong>51,1 días</strong><em>Proveedores / coste →</em></button>
+            <button class="kpi" data-kpi="ccc"><small>Ciclo de conversión de caja</small><strong>52,6 días</strong><em>DSO + DIO − DPO →</em></button>
+          </div>
+          <div class="chart-grid"><article class="chart-card full"><div class="chart-title"><div><h3>Días que el efectivo permanece en la operación</h3><p>Una caída del ciclo indica que, en conjunto, se recupera antes el dinero invertido en clientes e inventario, neto del plazo de proveedores.</p></div><div class="legend"><span style="--legend:#006c70">DSO</span><span style="--legend:#289ba0">DIO</span><span style="--legend:#d79a4b">DPO</span><span style="--legend:#183f4a">CCC</span></div></div><div class="chart" id="working-chart" role="img" aria-label="Evolución anual de DSO, DIO, DPO y ciclo de conversión de caja"></div><details class="data-disclosure"><summary>Ver los datos del gráfico</summary><div class="table-wrap"><table><thead><tr><th>Año</th><th>DSO</th><th>DIO</th><th>DPO</th><th>CCC</th></tr></thead><tbody><tr><td>2024</td><td>55,5</td><td>52,6</td><td>51,1</td><td>57,0</td></tr><tr><td>2025</td><td>59,5</td><td>54,8</td><td>48,7</td><td>65,6</td></tr><tr><td>2026</td><td>53,3</td><td>50,5</td><td>51,1</td><td>52,6</td></tr></tbody></table></div></details></article></div>
+          <div class="insight-grid"><div class="insight alert"><h3>2025 inmoviliza más caja</h3><p>El CCC sube a 65,6 días por mayor plazo de cobro e inventario y menor financiación de proveedores.</p></div><div class="insight"><h3>2026 recupera disciplina</h3><p>El ciclo baja 13 días frente a 2025. La mejora procede de las tres palancas, no de una sola.</p></div><div class="insight"><h3>Decisión</h3><p>Seguir DSO, DIO y DPO por separado: optimizar únicamente proveedores puede dañar relaciones o suministro.</p></div></div>
+        </div>
+
+        <div class="dashboard-view" data-panel="health" hidden>
+          <div class="kpi-grid">
+            <button class="kpi" data-kpi="current"><small>Current ratio</small><strong>2,95×</strong><em>Activo corriente / pasivo corriente →</em></button>
+            <button class="kpi" data-kpi="quick"><small>Quick ratio</small><strong>2,23×</strong><em>Sin inventario →</em></button>
+            <button class="kpi" data-kpi="net-debt"><small>Deuda neta</small><strong>−2,60 M€</strong><em>Posición de caja neta →</em></button>
+            <button class="kpi" data-kpi="interest"><small>Cobertura de intereses</small><strong>11,79×</strong><em>EBIT / gasto financiero →</em></button>
+          </div>
+          <div class="chart-grid"><article class="chart-card"><h3>Puente de inversión · 2026</h3><p class="muted">Muestra por qué hay dos métricas distintas después de la operación.</p><div class="formula-box"><div class="formula">CFO 6,17 M€<br>− CAPEX material 2,15 M€<br>= FCF simplificado 4,03 M€<br>− intangibles 0,30 M€<br>= caja tras inversión total 3,73 M€</div></div></article><article class="chart-card"><h3>Lectura de solvencia</h3><p>La deuda neta negativa significa que el efectivo supera la deuda financiera y los arrendamientos en 2,60 M€.</p><p>Es una señal cómoda, pero no decide por sí sola si conviene amortizar deuda: antes deben considerarse vencimientos, coste, caja mínima y plan de inversión.</p></article></div>
+          <div class="insight-grid"><div class="insight"><h3>Liquidez de cierre</h3><p>El activo corriente cubre 2,95 veces el pasivo corriente; sin inventario, 2,23 veces.</p></div><div class="insight"><h3>Capacidad de pago</h3><p>El EBIT cubre 11,79 veces el gasto financiero del ejercicio.</p></div><div class="insight"><h3>Cautela</h3><p>Son métricas consolidadas de cierre; no sustituyen un calendario diario de tesorería ni los covenants.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="build" id="construccion">
+      <div class="section-inner">
+        <div class="section-head">
+          <div><div class="section-kicker">Cómo se construye</div><h2>Del dato contable a una conclusión reproducible</h2></div>
+          <p>Este recorrido muestra qué se necesitó, de dónde procede cada dato, cómo se preparó, qué relaciones se crearon, cómo se calcularon los estados, el cash flow y los KPIs, y cómo se trasladaría el mismo diseño a Power BI y a una empresa real.</p>
+        </div>
+
+        <div class="build-intro">
+          <article class="build-callout">
+            <div class="section-kicker" style="color:#79d6d8">Principio de trabajo</div>
+            <h3>No empezar por el gráfico</h3>
+            <p>Primero se define la pregunta, el alcance y la fuente; después se controla la calidad, se modela y se calcula. El dashboard es la última capa: <strong>resume un razonamiento que ya debe poder auditarse sin él</strong>.</p>
+          </article>
+          <div class="build-status">
+            <div><b>Escenario</b>Datos simulados, sin relación con una empresa real.</div>
+            <div><b>Periodo</b>2023-12 como apertura y 36 cierres entre 2024 y 2026.</div>
+            <div><b>Moneda</b>EUR, sin conversión multimoneda.</div>
+            <div><b>Unidad</b>Importes en euros; ratios y días según definición.</div>
+            <div><b>Grano</b>Un mes y una cuenta o tipo de movimiento por fila.</div>
+            <div><b>Estado</b>26/26 controles y 36/36 conciliaciones superados.</div>
+          </div>
+        </div>
+
+        <div class="build-chain" aria-label="Proceso completo de construcción">
+          <div class="chain-step"><span>01</span><b>Pregunta</b><small>Qué decisión debe apoyar.</small></div>
+          <div class="chain-step"><span>02</span><b>Fuentes</b><small>Qué datos y responsables existen.</small></div>
+          <div class="chain-step"><span>03</span><b>Preparación</b><small>Limpiar, clasificar y validar.</small></div>
+          <div class="chain-step"><span>04</span><b>Modelo</b><small>Grano, claves y relaciones.</small></div>
+          <div class="chain-step"><span>05</span><b>Cálculo</b><small>Estados, cash flow y KPIs.</small></div>
+          <div class="chain-step"><span>06</span><b>Control</b><small>Conciliar y documentar.</small></div>
+          <div class="chain-step"><span>07</span><b>Decisión</b><small>Visualizar, interpretar y limitar.</small></div>
+        </div>
+
+        <div class="build-layout">
+          <aside class="build-nav" aria-label="Capítulos de cómo se construye">
+            <a href="#build-00">00 · Vista general</a>
+            <a href="#build-01">01 · Pregunta y alcance</a>
+            <a href="#build-02">02 · Datos necesarios</a>
+            <a href="#build-03">03 · Preparación y calidad</a>
+            <a href="#build-04">04 · Modelo y relaciones</a>
+            <a href="#build-05">05 · Estados financieros</a>
+            <a href="#build-06">06 · Cash flow indirecto</a>
+            <a href="#build-07">07 · Circulante y KPIs</a>
+            <a href="#build-08">08 · Dashboard</a>
+            <a href="#build-09">09 · Power BI</a>
+            <a href="#build-10">10 · Empresa real</a>
+          </aside>
+
+          <div class="build-content">
+            <article class="build-chapter" id="build-00">
+              <div class="chapter-label">00 · Vista general</div>
+              <h3>Cuatro capas para no mezclar hechos y propuestas</h3>
+              <p class="chapter-lead">Cada capítulo separa lo que existe en este caso de lo que se haría al llevarlo a una organización y a Power BI.</p>
+              <div class="layer-grid">
+                <div class="layer"><b>En este caso</b>Qué contiene realmente el Excel y qué muestra el HTML.</div>
+                <div class="layer"><b>Cómo se hizo</b>Transformaciones, fórmulas, controles y decisiones de diseño aplicadas.</div>
+                <div class="layer"><b>Implementación Power BI</b>Arquitectura equivalente propuesta; todavía no ejecutada.</div>
+                <div class="layer real"><b>En una empresa real</b>Fuentes, variables, gobierno y limitaciones adicionales que habría que incorporar.</div>
+              </div>
+              <div class="proof"><strong>Resultado verificable:</strong> cada conclusión debe poder recorrer la ruta dataset → tabla → campo → fórmula → control → visual → decisión.</div>
+            </article>
+
+            <article class="build-chapter" id="build-01">
+              <div class="chapter-label">01 · Pregunta y alcance</div>
+              <h3>Definir el problema antes de solicitar datos</h3>
+              <p class="chapter-lead">La pregunta principal es si el beneficio se transforma en caja suficiente para operar, invertir y atender obligaciones sin deteriorar la liquidez.</p>
+              <div class="scope-grid">
+                <div class="micro-card"><b>Decisiones</b><p>Circulante, calendario de inversión, caja mínima y capacidad para atender deuda.</p></div>
+                <div class="micro-card"><b>Horizonte</b><p>36 meses analíticos y un saldo previo para calcular las primeras variaciones.</p></div>
+                <div class="micro-card"><b>Frecuencia</b><p>Mensual para detectar tensiones que una cifra anual podría ocultar.</p></div>
+                <div class="micro-card"><b>Perímetro</b><p>Una empresa ficticia consolidada, sin sociedades ni eliminaciones intercompany.</p></div>
+                <div class="micro-card"><b>Escenario</b><p>Solo “Escenario simulado”; no contiene presupuesto ni forecast.</p></div>
+                <div class="micro-card"><b>Reglas previas</b><p>EUR, signos homogéneos, 365 días y tolerancia de conciliación de 1 €.</p></div>
+              </div>
+              <details open><summary>Checklist que se cerraría con Finanzas</summary><div class="disclosure-body"><ul><li>Definición exacta de efectivo y equivalentes, caja restringida y sobregiros.</li><li>Clasificación de intereses, impuestos, arrendamientos, dividendos y adquisiciones.</li><li>Qué se considera CAPEX y qué parte es mantenimiento o crecimiento.</li><li>Entidades, moneda, calendario fiscal, nivel de materialidad y frecuencia de actualización.</li><li>Usuarios, decisiones esperadas y responsable de aprobar cada definición.</li></ul></div></details>
+              <div class="caution"><strong>Por qué importa:</strong> dos equipos pueden calcular cifras distintas con los mismos datos si antes no acuerdan alcance, signos y políticas.</div>
+            </article>
+
+            <article class="build-chapter" id="build-02">
+              <div class="chapter-label">02 · Datos necesarios</div>
+              <h3>Qué contiene cada tabla y de dónde vendría</h3>
+              <p class="chapter-lead">El libro separa fuentes, cálculos, controles y salidas. Esta separación permite localizar el origen de una cifra cuando un KPI parece extraño.</p>
+              <div class="table-wrap source-table"><table><thead><tr><th>Tabla</th><th>Grano y filas</th><th>Origen habitual</th><th>Uso</th></tr></thead><tbody>
+                <tr><td><code>Date_Dim</code></td><td>Un periodo mensual · 37</td><td>Calendario creado por el analista</td><td>Ordenar, filtrar y comparar periodos; distingue apertura y meses analíticos.</td></tr>
+                <tr><td><code>Account_Map</code></td><td>Una cuenta clasificada · 34</td><td>Plan contable y estructura de reporting de Finanzas</td><td>Asigna estado, línea, signo y tratamiento en cash flow.</td></tr>
+                <tr><td><code>Income_Statement_Data</code></td><td>Periodo × cuenta P&amp;L · 612</td><td>Libro mayor o balance de sumas y saldos del ERP</td><td>Construir ingresos, costes, EBITDA, EBIT e impuesto.</td></tr>
+                <tr><td><code>Balance_Sheet_Data</code></td><td>Periodo × cuenta de balance · 629</td><td>Saldos del ERP y, si hace falta, auxiliares de clientes, proveedores e inventario</td><td>Construir el balance y calcular variaciones entre cierres.</td></tr>
+                <tr><td><code>Supplemental_Movements</code></td><td>Periodo × movimiento · 360</td><td>Tesorería, activos fijos, deuda, leases y dividendos</td><td>Identificar pagos y cobros de inversión y financiación.</td></tr>
+                <tr><td><code>Financial_Statements</code></td><td>Una línea calculada por periodo</td><td>Salida del modelo</td><td>Cuenta de resultados, balance y comprobación contable.</td></tr>
+                <tr><td><code>Cash_Flow_Model</code></td><td>Una línea de cash flow por periodo</td><td>Salida calculada</td><td>Reconstruir CFO, CFI, CFF y efectivo final.</td></tr>
+                <tr><td><code>KPI_Summary / KPI_Catalog</code></td><td>Un KPI y periodo o definición</td><td>Salida y documentación</td><td>Alimentar el dashboard y explicar cada medida.</td></tr>
+              </tbody></table></div>
+              <div class="layer-grid">
+                <div class="layer"><b>Dynamics 365 Business Central o ERP equivalente</b>El libro mayor y el balance de comprobación aportarían movimientos y saldos. Para profundizar se usarían cuentas a cobrar, cuentas a pagar, inventario, activos fijos y bancos.</div>
+                <div class="layer real"><b>Propietarios del dato</b>Contabilidad valida cuentas y cierres; Tesorería valida caja y financiación; Controlling/FP&amp;A valida definiciones, comparativas e interpretación.</div>
+              </div>
+              <details><summary>Por qué el balance no es suficiente para el cash flow</summary><div class="disclosure-body"><p>El balance muestra el saldo existente al cierre, pero no siempre distingue la naturaleza exacta de los movimientos. Por ejemplo, una variación del inmovilizado puede combinar compras, bajas, depreciación, deterioros y reclasificaciones. Por eso el caso utiliza <code>Supplemental_Movements</code> para CAPEX, intangibles, venta de activos, deuda, arrendamientos y dividendos.</p></div></details>
+              <details><summary>Información mínima que debe acompañar a cada extracción real</summary><div class="disclosure-body"><p>Sistema, empresa, informe o consulta, fecha y hora de corte, periodo, moneda, escenario, responsable, reglas de transformación y evidencia de conciliación con el cierre aprobado.</p></div></details>
+            </article>
+
+            <article class="build-chapter" id="build-03">
+              <div class="chapter-label">03 · Preparación y calidad</div>
+              <h3>Del extracto bruto a una base utilizable</h3>
+              <p class="chapter-lead">Antes de sumar cuentas se protege el dato original, se normaliza la estructura y se comprueba que ninguna fila queda fuera del modelo.</p>
+              <ol class="process-list">
+                <li><div><b>Conservar la capa original</b>Guardar el extracto sin sobrescribirlo, con fecha de corte y procedencia.</div></li>
+                <li><div><b>Normalizar tipos y claves</b>Fechas como fecha, importes como número y códigos como identificadores; crear <code>Period_Key</code> y validar <code>Account_Code</code>.</div></li>
+                <li><div><b>Homogeneizar signos</b>Aplicar una convención de reporting para que ingresos, gastos, activos y pasivos se agreguen de forma consistente.</div></li>
+                <li><div><b>Clasificar las cuentas</b>Relacionar cada código con <code>Account_Map</code>; ninguna cuenta utilizada puede quedar sin mapear.</div></li>
+                <li><div><b>Controlar duplicados y nulos</b>La clave compuesta periodo + cuenta o periodo + movimiento debe ser única.</div></li>
+                <li><div><b>Conciliar con la fuente</b>Los totales transformados deben coincidir con el cierre contable aprobado antes de crear KPIs.</div></li>
+                <li><div><b>Documentar transformaciones</b>Registrar qué se cambió, por qué, quién lo validó y qué versión alimenta el dashboard.</div></li>
+              </ol>
+              <div class="quality-grid" style="color:var(--ink)"><div class="quality" style="border-color:var(--line)"><strong>26 / 26</strong><span style="color:var(--muted)">controles de datos superados</span></div><div class="quality" style="border-color:var(--line)"><strong>36 / 36</strong><span style="color:var(--muted)">periodos conciliados</span></div><div class="quality" style="border-color:var(--line)"><strong>0</strong><span style="color:var(--muted)">errores de fórmula</span></div></div>
+              <details><summary>Controles incluidos en este proyecto</summary><div class="disclosure-body"><p>Recuentos esperados, claves duplicadas, campos obligatorios, cuentas sin clasificar, periodos sin dimensión, moneda y escenario permitidos, errores de fórmula, ecuación de balance, conciliación de CFO/CFI/CFF con efectivo y coherencia del FCF simplificado y de la caja tras inversión total.</p></div></details>
+              <details><summary>Cómo se haría en Power Query</summary><div class="disclosure-body"><p>Conexión o importación, tipado, renombrado, limpieza, unión con el mapa de cuentas, controles de claves y carga al modelo. Las reglas de transformación vivirían en Power Query o en un dataflow, no escondidas en medidas DAX.</p></div></details>
+            </article>
+
+            <article class="build-chapter" id="build-04">
+              <div class="chapter-label">04 · Modelo y relaciones</div>
+              <h3>Dimensiones que describen; hechos que miden</h3>
+              <p class="chapter-lead">El diseño se aproxima a un esquema en estrella: las dimensiones filtran las tablas de hechos en una sola dirección y las salidas se calculan desde ellas.</p>
+              <div class="model-map"><div class="model-diagram">
+                <div class="dim-stack"><div class="diagram-node"><b>Date_Dim</b>37 periodos · clave única</div><div class="diagram-node"><b>Account_Map</b>34 cuentas · clasificación y signo</div></div>
+                <div class="diagram-arrow">1 → *</div>
+                <div class="fact-stack"><div class="diagram-node"><b>Income_Statement_Data</b>612 importes de P&amp;L</div><div class="diagram-node"><b>Balance_Sheet_Data</b>629 saldos de balance</div><div class="diagram-node"><b>Supplemental_Movements</b>360 movimientos auxiliares</div></div>
+              </div><p class="diagram-note">Las tablas de hechos no se relacionan entre sí. Comparten dimensiones para evitar ambigüedad y doble conteo.</p></div>
+              <div class="table-wrap"><table><thead><tr><th>Desde</th><th>Cardinalidad</th><th>Hacia</th><th>Campo</th><th>Comprobación</th></tr></thead><tbody>
+                <tr><td>Date_Dim</td><td>1 → *</td><td>Income_Statement_Data</td><td>Period_Key</td><td>612 filas encuentran uno de los 36 meses analíticos.</td></tr>
+                <tr><td>Date_Dim</td><td>1 → *</td><td>Balance_Sheet_Data</td><td>Period_Key</td><td>629 filas: 37 cierres, incluido 2023-12 como apertura.</td></tr>
+                <tr><td>Date_Dim</td><td>1 → *</td><td>Supplemental_Movements</td><td>Period_Key</td><td>360 movimientos encuentran uno de los 36 meses.</td></tr>
+                <tr><td>Account_Map</td><td>1 → *</td><td>Income_Statement_Data</td><td>Account_Code</td><td>17 códigos de P&amp;L utilizados; ninguno sin clasificar.</td></tr>
+                <tr><td>Account_Map</td><td>1 → *</td><td>Balance_Sheet_Data</td><td>Account_Code</td><td>17 códigos de balance utilizados; ninguno sin clasificar.</td></tr>
+              </tbody></table></div>
+              <div class="scope-grid">
+                <div class="micro-card"><b>Uno a muchos</b><p>Un mes aparece una sola vez en la dimensión y muchas veces en las tablas de importes.</p></div>
+                <div class="micro-card"><b>Clave compuesta</b><p><code>Period_Key + Account_Code</code> identifica una única cuenta en un cierre.</p></div>
+                <div class="micro-card"><b>Dirección del filtro</b><p>El calendario y el mapa filtran los hechos; no hace falta que una tabla de movimientos filtre de vuelta.</p></div>
+              </div>
+              <div class="caution"><strong>En Power BI:</strong> conviene usar relaciones simples de dimensión a hechos y crear claves sustitutas cuando las claves compuestas o los cambios históricos del plan contable lo exijan.</div>
+            </article>
+
+            <article class="build-chapter" id="build-05">
+              <div class="chapter-label">05 · Estados financieros</div>
+              <h3>Flujo durante el periodo frente a saldo al cierre</h3>
+              <p class="chapter-lead">La cuenta de resultados explica actividad entre dos fechas. El balance es una fotografía en una fecha. El cash flow necesita ambos: beneficio del periodo y variaciones de saldos.</p>
+              <div class="state-grid">
+                <div class="micro-card"><b>Cuenta de resultados</b><p>Ingresos, costes, gastos operativos, depreciación, resultado financiero e impuestos.</p><p><strong>Pregunta:</strong> ¿qué rendimiento se generó?</p></div>
+                <div class="micro-card"><b>Balance</b><p>Efectivo, clientes, inventario, activos, proveedores, deuda, leases y patrimonio.</p><p><strong>Pregunta:</strong> ¿qué existe o se debe al cierre?</p></div>
+                <div class="micro-card"><b>Conexión</b><p>El resultado neto se ajusta por partidas sin caja y por cambios de balance para reconstruir el CFO.</p></div>
+              </div>
+              <div class="table-wrap"><table><thead><tr><th>Construcción 2026</th><th>Operación</th><th>Resultado</th><th>Interpretación sencilla</th></tr></thead><tbody>
+                <tr><td>Ingresos</td><td>Producto + servicios</td><td>42.971.983 €</td><td>Ventas reconocidas durante el año.</td></tr>
+                <tr><td>Coste de ventas</td><td>Materiales + mano de obra + logística</td><td>−25.468.156 €</td><td>Coste directo asociado al volumen vendido.</td></tr>
+                <tr><td>EBITDA</td><td>Ingresos − coste de ventas − gastos operativos</td><td>7.641.579 €</td><td>Rendimiento operativo antes de D&amp;A, intereses e impuestos; no es caja.</td></tr>
+                <tr><td>EBIT</td><td>EBITDA − depreciación − amortización</td><td>5.108.679 €</td><td>Beneficio operativo tras reconocer el consumo contable de activos.</td></tr>
+                <tr><td>Resultado neto</td><td>EBIT + resultado financiero − impuesto</td><td>3.562.167 €</td><td>Beneficio contable final; es el punto de partida del método indirecto.</td></tr>
+                <tr><td>Balance final</td><td>Activo − pasivo − patrimonio</td><td>0 €</td><td>La ecuación contable cuadra exactamente.</td></tr>
+              </tbody></table></div>
+              <details><summary>Cómo se agregan las cuentas</summary><div class="disclosure-body"><p><code>Account_Map</code> asigna cada cuenta a un estado, una sección y una línea de reporting. Los importes mensuales se agregan siguiendo ese mapa. El control compara el total transformado con la fuente y comprueba que ninguna cuenta quede sin clasificar.</p></div></details>
+              <details><summary>Convención de signos</summary><div class="disclosure-body"><p>Los ingresos y activos se muestran positivos; costes, gastos y salidas de caja, negativos. En ratios como DIO y DPO el coste de ventas se utiliza en valor absoluto para que los días sean positivos y comprensibles.</p></div></details>
+            </article>
+
+            <article class="build-chapter" id="build-06">
+              <div class="chapter-label">06 · Cash flow indirecto</div>
+              <h3>Transformar beneficio contable en movimiento de efectivo</h3>
+              <p class="chapter-lead">El método indirecto no suma “ventas cobradas” directamente. Parte del resultado neto y corrige lo que no fue caja y los desfases entre reconocer y cobrar o pagar.</p>
+              <div class="numbered-bridge">
+                <div class="bridge-row"><span class="n">1</span><div><b>Resultado neto</b><small>Punto de partida contable de 2026.</small></div><span class="amount">3.562.167 €</span></div>
+                <div class="bridge-row"><span class="n">2</span><div><b>Reincorporar depreciación y amortización</b><small>Reducen el beneficio, pero no son una salida de caja del mes.</small></div><span class="amount">+2.532.900 €</span></div>
+                <div class="bridge-row"><span class="n">3</span><div><b>Variaciones de circulante y otros ajustes</b><small>Clientes, inventario, otros activos, proveedores, devengos e impuestos.</small></div><span class="amount">+79.648 €</span></div>
+                <div class="bridge-row total"><span class="n">4</span><div><b>Flujo de caja operativo · CFO</b><small>Resultado neto + no monetarios ± variaciones operativas.</small></div><span class="amount">6.174.715 €</span></div>
+                <div class="bridge-row"><span class="n">5</span><div><b>Flujo de inversión · CFI</b><small>CAPEX material −2.145.561 € y altas de intangibles −300.000 €.</small></div><span class="amount">−2.445.561 €</span></div>
+                <div class="bridge-row"><span class="n">6</span><div><b>Flujo de financiación · CFF</b><small>Amortización de deuda, principal de leases y dividendos.</small></div><span class="amount">−1.300.000 €</span></div>
+                <div class="bridge-row total"><span class="n">7</span><div><b>Aumento neto de efectivo</b><small>CFO + CFI + CFF.</small></div><span class="amount">2.429.154 €</span></div>
+              </div>
+              <div class="math-box"><code>Efectivo inicial 5.620.368 € + CFO 6.174.715 € + CFI (−2.445.561 €) + CFF (−1.300.000 €) = <strong>efectivo final 8.049.522 €</strong></code></div>
+              <div class="table-wrap sign-table"><table><thead><tr><th>Cambio operativo</th><th>Efecto en CFO</th><th>Por qué</th></tr></thead><tbody>
+                <tr><td>Aumentan clientes</td><td class="minus">Resta caja</td><td>La venta se reconoció, pero todavía no se cobró.</td></tr>
+                <tr><td>Disminuyen clientes</td><td class="plus">Suma caja</td><td>Se cobran saldos pendientes.</td></tr>
+                <tr><td>Aumenta inventario</td><td class="minus">Resta caja</td><td>Se compra o produce antes de vender.</td></tr>
+                <tr><td>Aumentan proveedores</td><td class="plus">Suma caja temporal</td><td>Parte de las compras todavía no se ha pagado.</td></tr>
+                <tr><td>Disminuyen proveedores</td><td class="minus">Resta caja</td><td>Se pagan obligaciones acumuladas.</td></tr>
+              </tbody></table></div>
+              <div class="layer-grid">
+                <div class="layer"><b>FCF simplificado</b><strong>4.029.154 €</strong><br>CFO − CAPEX material. No descuenta intangibles y no pretende ser FCFF ni FCFE.</div>
+                <div class="layer"><b>Caja tras inversión total</b><strong>3.729.154 €</strong><br>CFO − CAPEX material − altas de intangibles.</div>
+                <div class="layer"><b>Variación neta de efectivo</b><strong>2.429.154 €</strong><br>Incluye inversión y financiación.</div>
+                <div class="layer real"><b>Efectivo final</b><strong>8.049.522 €</strong><br>Es un saldo de cierre; no debe confundirse con un flujo generado.</div>
+              </div>
+              <details><summary>Política de clasificación aplicada</summary><div class="disclosure-body"><p>Intereses e impuestos permanecen en CFO a través del resultado neto. CAPEX, intangibles y venta de activos se clasifican en CFI. Deuda, principal de arrendamientos y dividendos se clasifican en CFF. Otras políticas serían posibles, pero deben aplicarse de forma coherente y declararse.</p></div></details>
+            </article>
+
+            <article class="build-chapter" id="build-07">
+              <div class="chapter-label">07 · Circulante y KPIs</div>
+              <h3>No promediar doce ratios mensuales</h3>
+              <p class="chapter-lead">Para una lectura anual se utilizan flujos de todo el año y saldos medios. En este modelo, el saldo medio es la media de 13 cierres: diciembre anterior y los 12 meses del año.</p>
+              <div class="layer-grid">
+                <div class="layer"><b>Fórmulas</b><code>DSO = clientes medios / ingresos anuales × 365</code><br><code>DIO = inventario medio / coste de ventas anual × 365</code><br><code>DPO = proveedores medios / coste de ventas anual × 365</code><br><code>CCC = DSO + DIO − DPO</code></div>
+                <div class="layer"><b>Datos 2026</b>Clientes medios: 6.270.302 €<br>Inventario medio: 3.523.226 €<br>Proveedores medios: 3.568.811 €<br>Ingresos: 42.971.983 €<br>Coste de ventas: 25.468.156 €</div>
+              </div>
+              <div class="table-wrap"><table><thead><tr><th>Año</th><th>DSO</th><th>DIO</th><th>DPO</th><th>CCC = DSO + DIO − DPO</th></tr></thead><tbody><tr><td>2024</td><td>55,5 días</td><td>52,6 días</td><td>51,1 días</td><td>57,0 días</td></tr><tr><td>2025</td><td>59,5 días</td><td>54,8 días</td><td>48,7 días</td><td>65,6 días</td></tr><tr><td>2026</td><td>53,3 días</td><td>50,5 días</td><td>51,1 días</td><td>52,6 días</td></tr></tbody></table></div>
+              <div class="caution"><strong>Limitación importante:</strong> el coste de ventas se utiliza como aproximación de compras a crédito porque el dataset no contiene una tabla separada de compras. En una empresa real, DPO mejoraría con compras a crédito y saldos de proveedores depurados.</div>
+              <h3 style="margin-top:34px">Cómo se construye cualquier KPI</h3>
+              <div class="kpi-path"><div>Pregunta</div><div>Campos</div><div>Fórmula</div><div>Cálculo</div><div>Control</div><div>Visual</div><div>Decisión</div></div>
+              <details><summary>Catálogo completo de resultados 2026</summary><div class="disclosure-body"><div class="table-wrap"><table><thead><tr><th>KPI</th><th>Resultado</th><th>Base de cálculo</th></tr></thead><tbody>
+                <tr><td>CFO</td><td>6.174.715 €</td><td>Resultado neto + no monetarios ± circulante.</td></tr>
+                <tr><td>FCF simplificado</td><td>4.029.154 €</td><td>CFO − CAPEX material.</td></tr>
+                <tr><td>Caja tras inversión total</td><td>3.729.154 €</td><td>CFO − CAPEX material − intangibles.</td></tr>
+                <tr><td>Efectivo final</td><td>8.049.522 €</td><td>Efectivo inicial + CFO + CFI + CFF.</td></tr>
+                <tr><td>Current ratio</td><td>2,95×</td><td>Activo corriente / pasivo corriente.</td></tr>
+                <tr><td>Quick ratio</td><td>2,23×</td><td>(Efectivo + clientes) / pasivo corriente.</td></tr>
+                <tr><td>Capital circulante neto</td><td>13.482.795 €</td><td>Activo corriente − pasivo corriente.</td></tr>
+                <tr><td>DSO / DIO / DPO</td><td>53,3 / 50,5 / 51,1 días</td><td>Saldos medios de 13 cierres y flujos anuales.</td></tr>
+                <tr><td>Ciclo de caja</td><td>52,6 días</td><td>DSO + DIO − DPO.</td></tr>
+                <tr><td>Deuda neta</td><td>−2.599.522 €</td><td>Deuda y leases − efectivo; el signo negativo indica caja neta.</td></tr>
+                <tr><td>Deuda neta / EBITDA</td><td>−0,34×</td><td>Deuda neta / EBITDA anual.</td></tr>
+                <tr><td>Cobertura de intereses</td><td>11,79×</td><td>EBIT anual / gasto financiero anual.</td></tr>
+                <tr><td>ROA</td><td>12,36 %</td><td>Resultado neto / activo medio de apertura y cierre.</td></tr>
+                <tr><td>ROE</td><td>21,47 %</td><td>Resultado neto / patrimonio medio de apertura y cierre.</td></tr>
+                <tr><td>CAPEX / ingresos</td><td>4,99 %</td><td>CAPEX material / ingresos anuales.</td></tr>
+              </tbody></table></div></div></details>
+              <div class="chapter-links"><a class="audit-link" data-kpi="cfo" href="#kpi-cfo">CFO completo</a><a class="audit-link" data-kpi="dso" href="#kpi-dso">DSO completo</a><a class="audit-link" data-kpi="ccc" href="#kpi-ccc">CCC completo</a><a class="audit-link" data-kpi="current" href="#kpi-current">Current ratio</a><a class="audit-link" data-kpi="net-debt" href="#kpi-net-debt">Deuda neta</a></div>
+              <details open><summary>Ejemplo: DSO 2026</summary><div class="disclosure-body"><p><b>Pregunta:</b> ¿cuántos días de ventas permanecen pendientes de cobro?</p><p><b>Fuentes:</b> 13 saldos mensuales de clientes en <code>Financial_Statements</code> y los ingresos de enero a diciembre de 2026.</p><div class="math-box"><code>6.270.302 / 42.971.983 × 365 = <strong>53,3 días</strong></code></div><p><b>Lectura:</b> mejora frente a 2025, pero no permite identificar qué clientes o facturas causan el plazo; para eso se necesita un aging.</p></div></details>
+              <details><summary>Ejemplo: current ratio 2026</summary><div class="disclosure-body"><p><b>Fuentes:</b> activo corriente y pasivo corriente del balance de diciembre de 2026.</p><div class="math-box"><code>20.396.360 / 6.913.565 = <strong>2,95×</strong></code></div><p>Indica cobertura contable amplia, pero no asegura que todos los clientes se cobren a tiempo ni que el inventario pueda venderse inmediatamente.</p></div></details>
+            </article>
+
+            <article class="build-chapter" id="build-08">
+              <div class="chapter-label">08 · Construcción del dashboard</div>
+              <h3>Una vista por pregunta, no un gráfico por dato</h3>
+              <p class="chapter-lead">El dashboard se divide en caja, circulante y salud financiera para evitar mezclar flujos, saldos y ratios en una única pantalla.</p>
+              <div class="dashboard-plan">
+                <div class="micro-card"><b>01 · Caja</b><p><strong>Pregunta:</strong> ¿cuánto efectivo genera la operación y qué queda tras invertir?</p><p><strong>Visual:</strong> barras mensuales para CFO/FCF y línea para saldo de efectivo.</p><p><strong>Decisión:</strong> calendario de inversión y caja mínima.</p></div>
+                <div class="micro-card"><b>02 · Circulante</b><p><strong>Pregunta:</strong> ¿dónde permanece inmovilizada la caja?</p><p><strong>Visual:</strong> evolución anual de DSO, DIO, DPO y CCC.</p><p><strong>Decisión:</strong> objetivos de cobro, inventario y pago.</p></div>
+                <div class="micro-card"><b>03 · Salud financiera</b><p><strong>Pregunta:</strong> ¿existe liquidez y capacidad para atender obligaciones?</p><p><strong>Visual:</strong> KPIs de liquidez, deuda y cobertura.</p><p><strong>Decisión:</strong> deuda, colchón y capacidad inversora.</p></div>
+              </div>
+              <div class="table-wrap"><table><thead><tr><th>Elemento</th><th>Qué muestra</th><th>Por qué se eligió</th><th>Cautela</th></tr></thead><tbody>
+                <tr><td>Tarjeta KPI</td><td>Resultado principal y unidad</td><td>Permite lectura ejecutiva rápida y acceso a la explicación.</td><td>Una cifra aislada no explica causa ni tendencia.</td></tr>
+                <tr><td>Barras</td><td>Flujo positivo o negativo por mes</td><td>Facilita localizar meses de tensión, como septiembre de 2026.</td><td>No deben mezclarse con saldos sin diferenciar escalas.</td></tr>
+                <tr><td>Línea</td><td>Evolución del saldo final</td><td>Muestra el efecto acumulado de todos los flujos.</td><td>El saldo alto puede estar comprometido o restringido.</td></tr>
+                <tr><td>Tabla desplegable</td><td>Dato exacto detrás del gráfico</td><td>Permite reproducir el visual sin estimar puntos.</td><td>Debe conservar la misma definición y filtro del gráfico.</td></tr>
+              </tbody></table></div>
+              <div class="proof"><strong>Criterio de diseño:</strong> cada visual declara pregunta, medida, tipo, decisión y limitación. Así el gráfico no se convierte en una decoración sin propósito.</div>
+            </article>
+
+            <article class="build-chapter" id="build-09">
+              <div class="chapter-label">09 · Implementación propuesta en Power BI</div>
+              <h3>El mismo razonamiento, reconstruido en otra herramienta</h3>
+              <p class="chapter-lead">Power BI automatizaría la actualización, el filtrado y la interacción, pero no sustituye las definiciones financieras, el control de la fuente ni las conciliaciones.</p>
+              <div class="powerbi-flow"><div><b>1 · Obtener</b>ERP, ficheros o dataflows</div><div><b>2 · Preparar</b>Power Query</div><div><b>3 · Modelar</b>Esquema en estrella</div><div><b>4 · Calcular</b>Medidas DAX</div><div><b>5 · Publicar</b>Páginas, refresh y seguridad</div></div>
+              <div class="layer-grid">
+                <div class="layer"><b>Power Query</b>Importar, tipar, limpiar, unir el mapa de cuentas, validar claves y conservar parámetros de entidad, periodo y escenario.</div>
+                <div class="layer"><b>Modelo</b>Dimensión fecha y cuentas conectadas 1:* a las tablas de hechos, filtros en una dirección y tabla exclusiva de medidas.</div>
+                <div class="layer"><b>DAX</b>Medidas para P&amp;L, balances, variaciones, CFO, FCF, liquidez y circulante, sin hardcodear cifras del dashboard.</div>
+                <div class="layer real"><b>Servicio Power BI</b>Actualización programada, permisos, RLS por entidad si procede, linaje, certificación y proceso de publicación.</div>
+              </div>
+              <details open><summary>Arquitectura de páginas propuesta</summary><div class="disclosure-body"><ol><li><b>Resumen ejecutivo:</b> caja, conversión, inversión y principales alertas.</li><li><b>Cash flow y circulante:</b> puente CFO–CFI–CFF, tendencias y detalle de DSO/DIO/DPO.</li><li><b>Liquidez, solvencia y rentabilidad:</b> ratios, deuda, cobertura, ROA y ROE.</li><li><b>Método y auditoría:</b> definiciones, filtros aplicados, controles, fecha de actualización y drill-through al detalle.</li></ol><p>Segmentadores previstos: año, mes, escenario, entidad y moneda.</p></div></details>
+              <details><summary>Ejemplos orientativos de medidas DAX</summary><div class="disclosure-body"><p class="code-note">Son una guía de implementación. Los nombres exactos de columnas se adaptarían al modelo definitivo.</p><pre class="code-block">Resultado neto :=
+CALCULATE(
+    SUM(Income_Statement_Data[Amount]),
+    Account_Map[Reporting_Line] = "Resultado neto"
+)
+
+CFO :=
+[Resultado neto] + [Partidas no monetarias] + [Variación de circulante]
+
+FCF simplificado :=
+[CFO] + [CAPEX material]
+
+CCC días :=
+[DSO días] + [DIO días] - [DPO días]</pre></div></details>
+              <details><summary>Interacciones previstas</summary><div class="disclosure-body"><p>Tooltips con definición y fórmula; drill-through de un KPI a sus componentes; tablas de detalle exportables; marcadores para lectura ejecutiva/auditoría; títulos dinámicos con filtros; y alertas que distingan una excepción real de una simple variación estacional.</p></div></details>
+              <div class="caution"><strong>No se afirma que ya exista:</strong> esta sección es el plano técnico para la futura reconstrucción en Power BI, no una demostración de un archivo <code>.pbix</code> terminado.</div>
+            </article>
+
+            <article class="build-chapter" id="build-10">
+              <div class="chapter-label">10 · Adaptación a una empresa real</div>
+              <h3>Qué faltaría antes de utilizarlo para gestionar</h3>
+              <p class="chapter-lead">El caso demuestra método y trazabilidad con datos simulados. Una implantación real requiere mayor granularidad, políticas aprobadas, responsabilidades y controles operativos.</p>
+              <div class="table-wrap compare-table"><table><thead><tr><th>Área</th><th>Modelo mínimo</th><th>Modelo empresarial más completo</th></tr></thead><tbody>
+                <tr><td>Perímetro</td><td>Una entidad y EUR</td><td>Sociedades, centros, intercompany, consolidación y multimoneda.</td></tr>
+                <tr><td>Escenarios</td><td>Datos históricos</td><td>Actual, Budget, Forecast y versiones aprobadas.</td></tr>
+                <tr><td>Clientes</td><td>Saldo mensual agregado</td><td>Factura, vencimiento, aging, litigios, impagos, factoring y límites de crédito.</td></tr>
+                <tr><td>Inventario</td><td>Saldo mensual</td><td>SKU, ubicación, movimientos, obsolescencia, stock de seguridad y nivel de servicio.</td></tr>
+                <tr><td>Proveedores</td><td>Saldo y coste de ventas</td><td>Compras a crédito, facturas, vencimientos, condiciones, confirming y dependencia.</td></tr>
+                <tr><td>Tesorería</td><td>Efectivo de balance</td><td>Bancos, caja restringida, cash pooling, calendario diario y conciliación bancaria.</td></tr>
+                <tr><td>Deuda</td><td>Saldo y amortizaciones</td><td>Vencimientos, tipos, covenants, garantías, comisiones y escenarios de refinanciación.</td></tr>
+                <tr><td>Inversión</td><td>CAPEX e intangibles</td><td>Mantenimiento/crecimiento, proyecto, aprobaciones, retorno, compromisos y pagos futuros.</td></tr>
+                <tr><td>Fiscalidad</td><td>Impuesto agregado</td><td>IVA, pagos a cuenta, impuestos diferidos, calendario fiscal y jurisdicciones.</td></tr>
+                <tr><td>Gobierno</td><td>Versión y controles</td><td>Data owner, responsable de definición, aprobador, SLA, refresh, accesos y registro de cambios.</td></tr>
+              </tbody></table></div>
+              <h3 style="margin-top:32px">Políticas que deben quedar escritas</h3>
+              <div class="scope-grid">
+                <div class="micro-card"><b>Efectivo</b><p>Qué saldos son equivalentes, restringidos o sobregiros.</p></div>
+                <div class="micro-card"><b>Intereses e impuestos</b><p>Clasificación dentro del estado de flujos.</p></div>
+                <div class="micro-card"><b>Arrendamientos</b><p>Separación de principal, interés y presentación.</p></div>
+                <div class="micro-card"><b>Inversión</b><p>CAPEX, intangibles, adquisiciones y ventas de activos.</p></div>
+                <div class="micro-card"><b>Circulante</b><p>Compras a crédito, ventas a crédito, base temporal y estacionalidad.</p></div>
+                <div class="micro-card"><b>Materialidad</b><p>Tolerancias, redondeos y umbrales de investigación.</p></div>
+              </div>
+              <details open><summary>Quién validaría cada capa</summary><div class="disclosure-body"><p><b>Contabilidad:</b> cuentas, cierres y estados. <b>Tesorería:</b> bancos, deuda, financiación y previsión de pagos. <b>Controlling/FP&amp;A:</b> reglas de negocio, KPIs, escenarios y explicación de desviaciones. <b>Data/BI:</b> extracción, modelo, actualización, seguridad y rendimiento. <b>Dirección:</b> umbrales, decisiones y responsabilidad final.</p></div></details>
+              <div class="proof"><strong>Conclusión profesional:</strong> el modelo es reproducible y coherente para demostrar el proceso. Para utilizarlo en gestión real habría que conectar las fuentes aprobadas, completar el detalle operativo y obtener la validación formal de los propietarios del dato.</div>
+              <div class="chapter-links"><a href="#auditoria">Continuar con la auditoría →</a><a href="data/cash-flow-financial-health-analysis.xlsx" download>Descargar el dataset →</a></div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="method" id="metodo"><div class="section-inner"><div class="section-head"><div><div class="section-kicker">Método indirecto, sin dar nada por supuesto</div><h2>Cómo se construye el cash flow</h2></div><p>La cuenta de resultados explica rendimiento durante un periodo. El balance muestra lo que la empresa posee y debe en una fecha. El cash flow conecta ambos para explicar por qué cambia el efectivo.</p></div>
+      <div class="method-flow"><div class="flow-step"><b>1 · Resultado neto</b>Beneficio contable después de gastos financieros e impuestos.</div><div class="flow-step"><b>2 · No monetarios</b>Se revierten depreciaciones, deterioros y resultados contables sin caja operativa equivalente.</div><div class="flow-step"><b>3 · Circulante</b>Se traducen variaciones de clientes, inventario, proveedores y devengos a entradas o salidas.</div><div class="flow-step"><b>4 · Inversión</b>Se incorporan CAPEX, intangibles, ventas de activos y adquisiciones.</div><div class="flow-step"><b>5 · Financiación</b>Se añaden deuda, arrendamientos y dividendos para conciliar el efectivo final.</div></div>
+      <div class="formula-box"><h3>Cash flow operativo por método indirecto</h3><div class="formula">CFO = resultado neto + depreciación y amortización + deterioros − resultado por venta de activos − aumento de clientes − aumento de inventario − aumento de otros activos corrientes + aumento de proveedores + aumento de devengos + aumento de impuestos a pagar</div><p>Un aumento de clientes consume caja porque se reconoció ingreso que todavía no se ha cobrado. Un aumento de proveedores libera caja temporalmente porque se reconoció un gasto que todavía no se ha pagado.</p></div>
+      <div class="plain-grid"><article class="explain"><h3>De dónde sale la cuenta de resultados</h3><p>De <code>Income_Statement_Data</code>: 612 registros, resultado de 36 meses × 17 cuentas. Los importes mensuales se agregan a ingresos, coste de ventas, gastos operativos, EBITDA, EBIT y resultado neto mediante <code>Account_Map</code>.</p></article><article class="explain"><h3>De dónde sale el balance</h3><p>De <code>Balance_Sheet_Data</code>: 629 registros, resultado de 37 periodos × 17 cuentas. Incluye diciembre de 2023 como saldo de apertura para calcular correctamente la variación de enero de 2024.</p></article><article class="explain"><h3>Por qué existe una tabla auxiliar</h3><p>El balance no identifica por sí solo la naturaleza exacta de todos los pagos y cobros de inversión y financiación. <code>Supplemental_Movements</code> aporta 360 registros de CAPEX, intangibles, venta de activos, deuda, arrendamientos y dividendos.</p></article><article class="explain"><h3>Por qué no todo es efectivo</h3><p>Una venta puede generar ingreso antes del cobro; una compra puede generar gasto o activo antes del pago; una depreciación reduce beneficio pero no paga caja en ese mes. El método indirecto corrige esas diferencias.</p></article></div>
+    </div></section>
+
+    <section class="model" id="modelo"><div class="section-inner"><div class="section-head"><div><div class="section-kicker">Modelo de datos y cardinalidad</div><h2>Tablas pequeñas, relaciones explícitas</h2></div><p>El diseño separa dimensiones —describen periodos y cuentas— de tablas de hechos —guardan importes o movimientos—. Así se reduce la duplicación y se conserva una ruta clara hasta el dato fuente.</p></div>
+      <div class="model-grid"><article class="entity"><code>Date_Dim</code><ul><li>37 filas: apertura + 36 cierres</li><li>Clave única: Period_Key</li><li>Año, trimestre, mes y días naturales</li></ul></article><article class="entity"><code>Account_Map</code><ul><li>Mapa único de cuentas</li><li>Estado, sección y convención de signo</li><li>Permite agrupar P&amp;L y balance</li></ul></article><article class="entity fact"><code>Income_Statement_Data</code><ul><li>612 filas</li><li>Grano: periodo × cuenta de P&amp;L</li><li>Escenario simulado · EUR</li></ul></article><article class="entity fact"><code>Balance_Sheet_Data</code><ul><li>629 filas</li><li>Grano: periodo × cuenta de balance</li><li>Incluye saldo de apertura</li></ul></article><article class="entity fact"><code>Supplemental_Movements</code><ul><li>360 filas</li><li>Grano: periodo × tipo de movimiento</li><li>CFI y CFF con naturaleza explícita</li></ul></article><article class="entity"><code>Outputs</code><ul><li>Financial_Statements</li><li>Cash_Flow_Model</li><li>KPI_Summary · Checks · Lineage</li></ul></article></div>
+      <div class="relations"><h3>Relaciones</h3><div class="relation"><span><b>Date_Dim</b><br>Period_Key único</span><span class="cardinality">1 → *</span><span><b>Tres tablas fuente</b><br>muchas filas por periodo</span></div><div class="relation"><span><b>Account_Map</b><br>Account_Code único</span><span class="cardinality">1 → *</span><span><b>P&amp;L y balance</b><br>muchas filas por cuenta</span></div><div class="relation"><span><b>Tablas fuente</b><br>importes y movimientos</span><span class="cardinality">Σ → 1</span><span><b>Modelo financiero</b><br>un resultado por periodo y KPI</span></div></div>
+    </div></section>
+
+    <section class="policies" id="politicas"><div class="section-inner"><div class="section-head"><div><div class="section-kicker">Políticas contables y analíticas</div><h2>Las reglas que condicionan la lectura</h2></div><p>Estas decisiones no son detalles: cambian dónde aparece un flujo, cómo se calcula un ratio y qué comparaciones son válidas.</p></div><div class="policy-grid"><div class="policy"><strong>Escenario</strong><p>Todos los datos son ficticios y se identifican como “Escenario simulado”. No representan una compañía real.</p></div><div class="policy"><strong>Intereses e impuestos</strong><p>Permanecen en CFO a través del resultado neto. No se reclasifican como financiación.</p></div><div class="policy"><strong>Inversión</strong><p>CAPEX material, intangibles y venta de activos se clasifican en CFI. Adquisiciones también irían a CFI.</p></div><div class="policy"><strong>Financiación</strong><p>Deuda, principal de arrendamientos y dividendos se clasifican en CFF.</p></div><div class="policy"><strong>Circulante anual</strong><p>DSO, DIO y DPO usan la media de 13 cierres —diciembre anterior y doce meses del año—, flujos anuales y base de 365 días.</p></div><div class="policy"><strong>Circulante mensual</strong><p>Los ratios de cada mes usan sus días naturales. Sirven para tendencia; son más volátiles que la lectura anual.</p></div><div class="policy"><strong>FCF simplificado</strong><p>CFO menos CAPEX material. Se denomina “simplificado” porque no descuenta intangibles ni pretende ser FCFF o FCFE.</p></div><div class="policy"><strong>Caja tras inversión total</strong><p>CFO menos CAPEX material y altas de intangibles. Tampoco es un flujo desapalancado.</p></div><div class="policy"><strong>Tolerancia</strong><p>Las conciliaciones admiten 1 € para evitar falsos errores de redondeo. No sustituye una revisión profesional.</p></div></div></div></section>
+
+    <section class="audit" id="auditoria"><div class="section-inner"><div class="section-head"><div><div class="section-kicker">Modo auditoría</div><h2>Reproduce el resultado desde el dato</h2></div><p>“PASS” indica que el modelo ha superado las 26 validaciones internas definidas para este proyecto, incluidas las comprobaciones de calidad de datos, fórmulas y conciliación de los 36 periodos financieros.</p></div>
+      <span class="status">MODEL STATUS: PASS</span>
+      <div class="quality-grid"><div class="quality"><strong>26 / 26</strong><span>controles de calidad superados</span></div><div class="quality"><strong>36 / 36</strong><span>periodos financieros conciliados</span></div><div class="quality"><strong>0</strong><span>errores de fórmula detectados</span></div></div>
+      <div class="audit-only">
+        <h3>Auditoría rápida en 5 minutos</h3><div class="audit-steps"><div class="audit-step"><b>Descarga el Excel.</b><br>Empieza en README y confirma dataset 1.1, escenario simulado, periodo, moneda y alcance.</div><div class="audit-step"><b>Revisa Data_Quality.</b><br>Todos los resultados deben ser “OK” y el estado global debe permanecer en PASS.</div><div class="audit-step"><b>Comprueba la dimensión fecha.</b><br>Date_Dim debe contener 2023-12 como apertura y 36 periodos de análisis.</div><div class="audit-step"><b>Traza una cifra.</b><br>Desde KPI_Summary abre Lineage, identifica fórmula, hojas fuente, periodo y limitación.</div><div class="audit-step"><b>Recalcula el cash flow.</b><br>En Cash_Flow_Model parte del resultado neto y sigue no monetarios, circulante, CFI y CFF.</div><div class="audit-step"><b>Concilia el efectivo.</b><br>El efectivo inicial más CFO, CFI y CFF debe igualar el saldo final de balance con tolerancia de 1 €.</div></div>
+
+        <div class="kpi-dictionary"><h3>Diccionario auditable de KPIs</h3>
+          <details class="kpi-detail" id="kpi-cfo"><summary>Cash flow operativo · 6,17 M€</summary><div class="detail-body"><div><b>Qué mide</b>Caja generada por la actividad ordinaria en 2026.</div><div><b>Fórmula</b>Resultado neto + no monetarios ± variaciones de circulante.</div><div><b>Datos usados</b>Cash_Flow_Model filas 5–16; P&amp;L mensual y balances consecutivos desde 2025-12 hasta 2026-12.</div><div><b>Conclusión y límite</b>Conversión positiva; depende de la clasificación elegida para intereses e impuestos.</div></div></details>
+          <details class="kpi-detail" id="kpi-fcf"><summary>FCF simplificado · 4,03 M€</summary><div class="detail-body"><div><b>Qué mide</b>Caja operativa restante después de inversión material.</div><div><b>Fórmula</b>6,174715 M€ − 2,145561 M€ = 4,029154 M€.</div><div><b>Datos usados</b>Cash_Flow_Model filas 16 y 18, meses 2026-01 a 2026-12.</div><div><b>Conclusión y límite</b>La operación cubre CAPEX material; excluye intangibles y no es FCFF ni FCFE.</div></div></details>
+          <details class="kpi-detail" id="kpi-cash-invest"><summary>Caja tras inversión total · 3,73 M€</summary><div class="detail-body"><div><b>Qué mide</b>Caja operativa después de CAPEX material y altas de intangibles.</div><div><b>Fórmula</b>6,174715 − 2,145561 − 0,300000 = 3,729154 M€.</div><div><b>Datos usados</b>Cash_Flow_Model filas 16, 18 y 19.</div><div><b>Conclusión y límite</b>La inversión total se cubre; no incluye financiación, dividendos ni ventas de activos.</div></div></details>
+          <details class="kpi-detail" id="kpi-ending-cash"><summary>Efectivo final · 8,05 M€</summary><div class="detail-body"><div><b>Qué mide</b>Saldo de efectivo disponible a 31 de diciembre de 2026.</div><div><b>Fórmula</b>Efectivo inicial + CFO + CFI + CFF.</div><div><b>Datos usados</b>Balance 2026-12 y conciliación de Cash_Flow_Model.</div><div><b>Conclusión y límite</b>Foto de cierre cómoda; no muestra pagos diarios ni restricciones de caja.</div></div></details>
+          <details class="kpi-detail" id="kpi-dso"><summary>DSO · 53,3 días</summary><div class="detail-body"><div><b>Qué mide</b>Días aproximados que tarda en cobrarse una venta.</div><div><b>Fórmula</b>Media de 13 saldos de clientes / ingresos anuales × 365.</div><div><b>Datos usados</b>Financial_Statements Y34:AK34 —diciembre 2025 y doce cierres de 2026— e ingresos enero–diciembre 2026.</div><div><b>Conclusión y límite</b>Mejora frente a 2025; no sustituye un aging por factura.</div></div></details>
+          <details class="kpi-detail" id="kpi-dio"><summary>DIO · 50,5 días</summary><div class="detail-body"><div><b>Qué mide</b>Días aproximados de coste almacenado en inventario.</div><div><b>Fórmula</b>Media de 13 saldos de inventario / coste de ventas anual × 365.</div><div><b>Datos usados</b>Financial_Statements Y35:AK35 y coste de ventas de enero–diciembre 2026 en valor absoluto.</div><div><b>Conclusión y límite</b>Mejora frente a 2025; no incorpora obsolescencia o nivel de servicio.</div></div></details>
+          <details class="kpi-detail" id="kpi-dpo"><summary>DPO · 51,1 días</summary><div class="detail-body"><div><b>Qué mide</b>Días aproximados de financiación obtenida de proveedores.</div><div><b>Fórmula</b>Media de 13 saldos de proveedores / coste de ventas anual × 365.</div><div><b>Datos usados</b>Financial_Statements Y42:AK42 y coste de ventas de enero–diciembre 2026.</div><div><b>Conclusión y límite</b>El coste de ventas aproxima compras a crédito; un modelo real debería usar compras y vencimientos.</div></div></details>
+          <details class="kpi-detail" id="kpi-ccc"><summary>Ciclo de conversión de caja · 52,6 días</summary><div class="detail-body"><div><b>Qué mide</b>Días netos que la operación mantiene efectivo inmovilizado.</div><div><b>Fórmula</b>53,259 + 50,494 − 51,147 = 52,606 días.</div><div><b>Datos usados</b>DSO, DIO y DPO de KPI_Summary.</div><div><b>Conclusión y límite</b>Baja frente a 65,6 días en 2025; es un indicador agregado.</div></div></details>
+          <details class="kpi-detail" id="kpi-current"><summary>Current ratio · 2,95×</summary><div class="detail-body"><div><b>Qué mide</b>Cobertura contable de pasivos corrientes con activos corrientes.</div><div><b>Fórmula</b>Activo corriente / pasivo corriente.</div><div><b>Datos usados</b>Financial_Statements filas 37 y 47, 2026-12.</div><div><b>Conclusión y límite</b>Colchón amplio; depende de la calidad y liquidez de clientes e inventario.</div></div></details>
+          <details class="kpi-detail" id="kpi-quick"><summary>Quick ratio · 2,23×</summary><div class="detail-body"><div><b>Qué mide</b>Cobertura de corto plazo sin depender del inventario.</div><div><b>Fórmula</b>(Efectivo + clientes) / pasivo corriente.</div><div><b>Datos usados</b>Financial_Statements filas 33, 34 y 47, 2026-12.</div><div><b>Conclusión y límite</b>Liquidez cómoda; no refleja el calendario exacto de cobros y pagos.</div></div></details>
+          <details class="kpi-detail" id="kpi-net-debt"><summary>Deuda neta · −2,60 M€</summary><div class="detail-body"><div><b>Qué mide</b>Deuda y arrendamientos menos efectivo.</div><div><b>Fórmula</b>Deuda corriente + no corriente + leases − efectivo.</div><div><b>Datos usados</b>Financial_Statements filas 45, 46, 48, 49 y 33.</div><div><b>Conclusión y límite</b>El signo negativo representa caja neta; no incluye covenants ni caja restringida.</div></div></details>
+          <details class="kpi-detail" id="kpi-interest"><summary>Cobertura de intereses · 11,79×</summary><div class="detail-body"><div><b>Qué mide</b>Cuántas veces el EBIT cubre el gasto financiero.</div><div><b>Fórmula</b>EBIT / gasto financiero en valor absoluto.</div><div><b>Datos usados</b>Financial_Statements filas 25 y 26, LTM 2026.</div><div><b>Conclusión y límite</b>Capacidad holgada en el escenario; no sustituye forecast de tesorería o vencimientos.</div></div></details>
+        </div>
+        <div class="audit-note"><b>Controles incluidos:</b> recuentos esperados, duplicados por clave, campos obligatorios, cuentas sin mapear, periodos sin dimensión, escenarios y moneda permitidos, errores de cálculo, 36 conciliaciones financieras, conciliación del FCF simplificado y conciliación de caja tras inversión total.</div>
+      </div>
+    </div></section>
+
+    <section class="about" id="ficha"><div class="section-inner"><div class="about-grid"><div><div class="section-kicker">Ficha del proyecto</div><h2>Versión web 1.2 cerrada</h2><p>Este proyecto pretende mostrar la capacidad para estructurar datos, modelar la lógica financiera, validar resultados, explicar decisiones y documentar limitaciones.</p><div class="hero-actions"><a class="button" href="data/cash-flow-financial-health-analysis.xlsx" download>Descargar Excel auditable</a><a class="button secondary" href="#inicio">Volver arriba</a></div></div><div class="meta-list"><div class="meta"><b>Autora</b>Ana Guedán Carbonell</div><div class="meta"><b>Versión web</b>1.2</div><div class="meta"><b>Dataset financiero</b>1.1</div><div class="meta"><b>Fecha de revisión</b>13 de agosto de 2026</div><div class="meta"><b>Escenario</b>Datos simulados</div><div class="meta"><b>Estado</b>PASS interno</div><div class="meta"><b>Próxima evolución</b>Reconstrucción en Power BI</div><div class="meta" style="grid-column:1/-1"><b>Registro de cambios v1.2</b>Nueva guía “Cómo se construye”; origen empresarial de datos; preparación y controles; modelo, cardinalidades y filtros; construcción de estados; puente completo de cash flow; metodología anual de 13 saldos para circulante; diseño de dashboard; plano Power BI; adaptación a empresa real y enlaces entre explicación y auditoría.</div></div></div></div></section>
+  </main>
+  <footer><div class="footer-grid"><strong>Ana Guedán Carbonell · Data Analyst × Finance Analytics</strong><p>Escenario simulado · web v1.2 · dataset v1.1</p></div></footer>
+
+  <script>
+    const months=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    const cfo=[1.909741,-.495060,1.331453,.296708,.382666,.124655,1.012199,.710519,-.392367,.620478,.185054,.488669];
+    const fcf=[1.745007,-.657242,1.174264,.146405,.240383,-.009357,.885800,.590234,-1.028707,.505478,.068641,.368248];
+    const cash=[7.325375,6.628133,7.607397,7.713802,7.914185,7.709828,8.555628,9.105862,7.882155,8.347633,8.376274,8.049522];
+    const ns='http://www.w3.org/2000/svg';
+    const svgEl=(tag,attrs={})=>{const el=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));return el};
+    const textEl=(x,y,value,attrs={})=>{const t=svgEl('text',{x,y,...attrs});t.textContent=value;return t};
+    function cashChart(){const host=document.querySelector('#cash-chart');host.innerHTML='';const w=1000,h=330,p={l:52,r:56,t:18,b:42},iw=w-p.l-p.r,ih=h-p.t-p.b;const svg=svgEl('svg',{viewBox:`0 0 ${w} ${h}`,'aria-hidden':'true'});const min=-1.2,max=2.1,y=v=>p.t+(max-v)/(max-min)*ih;[-1,0,1,2].forEach(v=>{svg.append(svgEl('line',{x1:p.l,x2:w-p.r,y1:y(v),y2:y(v),stroke:'#d7e1df','stroke-width':1}));svg.append(textEl(p.l-9,y(v)+4,`${v} M€`,{'text-anchor':'end','font-size':11,fill:'#63777c'}))});const step=iw/months.length,bw=step*.26;months.forEach((m,i)=>{const cx=p.l+step*(i+.5);[[cfo[i],-bw/1.9,'#006c70'],[fcf[i],bw/1.9,'#183f4a']].forEach(([v,dx,color])=>{const yy=y(Math.max(v,0)),height=Math.abs(y(v)-y(0));svg.append(svgEl('rect',{x:cx+dx-bw/2,y:v>=0?yy:y(0),width:bw,height:Math.max(height,1),rx:3,fill:color}))});svg.append(textEl(cx,h-17,m,{'text-anchor':'middle','font-size':11,fill:'#63777c'}))});const cmin=6.5,cmax=9.4,cy=v=>p.t+(cmax-v)/(cmax-cmin)*ih;let d='';cash.forEach((v,i)=>{const x=p.l+step*(i+.5),yy=cy(v);d+=`${i?'L':'M'}${x},${yy}`});svg.append(svgEl('path',{d,fill:'none',stroke:'#d79a4b','stroke-width':4,'stroke-linejoin':'round'}));cash.forEach((v,i)=>svg.append(svgEl('circle',{cx:p.l+step*(i+.5),cy:cy(v),r:4,fill:'#d79a4b',stroke:'#fff','stroke-width':2})));[7,8,9].forEach(v=>svg.append(textEl(w-p.r+8,cy(v)+4,`${v} M€`,{'font-size':11,fill:'#8b6a38'})));host.append(svg)}
+    function workingChart(){const host=document.querySelector('#working-chart');host.innerHTML='';const years=['2024','2025','2026'],series=[{v:[55.5331,59.5082,53.2594],c:'#006c70'},{v:[52.5512,54.7759,50.4935],c:'#289ba0'},{v:[51.1313,48.7159,51.1469],c:'#d79a4b'},{v:[56.9530,65.5682,52.6060],c:'#183f4a'}];const w=1000,h=330,p={l:55,r:30,t:20,b:42},iw=w-p.l-p.r,ih=h-p.t-p.b,min=40,max=70,y=v=>p.t+(max-v)/(max-min)*ih,x=i=>p.l+iw*(i/(years.length-1));const svg=svgEl('svg',{viewBox:`0 0 ${w} ${h}`,'aria-hidden':'true'});[40,50,60,70].forEach(v=>{svg.append(svgEl('line',{x1:p.l,x2:w-p.r,y1:y(v),y2:y(v),stroke:'#d7e1df'}));svg.append(textEl(p.l-8,y(v)+4,`${v} d`,{'text-anchor':'end','font-size':11,fill:'#63777c'}))});years.forEach((yr,i)=>svg.append(textEl(x(i),h-16,yr,{'text-anchor':'middle','font-size':12,fill:'#63777c'})));series.forEach(s=>{let d='';s.v.forEach((v,i)=>d+=`${i?'L':'M'}${x(i)},${y(v)}`);svg.append(svgEl('path',{d,fill:'none',stroke:s.c,'stroke-width':4,'stroke-linecap':'round'}));s.v.forEach((v,i)=>{svg.append(svgEl('circle',{cx:x(i),cy:y(v),r:5,fill:s.c,stroke:'#fff','stroke-width':2}));svg.append(textEl(x(i),y(v)-10,v.toFixed(1).replace('.',','),{'text-anchor':'middle','font-size':10,fill:s.c,'font-weight':700}))})});host.append(svg)}
+    function fillTable(){const body=document.querySelector('#cash-table');body.innerHTML=months.map((m,i)=>`<tr><td>${m} 2026</td><td>${cfo[i].toFixed(3).replace('.',',')} M€</td><td>${fcf[i].toFixed(3).replace('.',',')} M€</td><td>${cash[i].toFixed(3).replace('.',',')} M€</td></tr>`).join('')}
+    document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected','false'));tab.setAttribute('aria-selected','true');document.querySelectorAll('.dashboard-view').forEach(p=>p.hidden=p.dataset.panel!==tab.dataset.view);requestAnimationFrame(()=>{cashChart();workingChart()})}));
+    const auditToggle=document.querySelector('.audit-toggle');function setAudit(on){document.body.classList.toggle('audit-on',on);auditToggle.setAttribute('aria-pressed',String(on));auditToggle.textContent=on?'Ocultar detalle de auditoría':'Activar modo auditoría'}auditToggle.addEventListener('click',()=>setAudit(!document.body.classList.contains('audit-on')));
+    document.querySelectorAll('.audit-jump').forEach(b=>b.addEventListener('click',()=>{setAudit(true);document.querySelector('#auditoria').scrollIntoView({behavior:'smooth'})}));
+    document.querySelectorAll('.kpi').forEach(k=>k.addEventListener('click',()=>{setAudit(true);const d=document.querySelector(`#kpi-${k.dataset.kpi}`);if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'center'})}}));
+    document.querySelectorAll('.audit-link').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();setAudit(true);const d=document.querySelector(`#kpi-${link.dataset.kpi}`);if(d){d.open=true;d.scrollIntoView({behavior:'smooth',block:'center'})}}));
+    const menu=document.querySelector('.menu-button'),links=document.querySelector('#nav-links');menu.addEventListener('click',()=>{const open=links.classList.toggle('open');menu.setAttribute('aria-expanded',String(open))});links.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{links.classList.remove('open');menu.setAttribute('aria-expanded','false')}));
+    window.addEventListener('resize',()=>{cashChart();workingChart()});cashChart();workingChart();fillTable();window.__case04Ready=true;
+  </script>
+</body>
+</html>
